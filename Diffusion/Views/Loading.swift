@@ -50,7 +50,7 @@ struct LoadingView: View {
                     DispatchQueue.main.async {
                         switch state {
                         case .downloading(let progress):
-                            preparationPhase = "Downloading"
+                            preparationPhase = String(format : "Downloading %.2f%%", progress * 100)
                             downloadProgress = progress
                         case .uncompressing:
                             preparationPhase = "Uncompressing"

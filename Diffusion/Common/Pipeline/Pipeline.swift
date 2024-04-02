@@ -88,6 +88,7 @@ class Pipeline {
         config.disableSafety = disableSafety
         config.schedulerType = scheduler.asStableDiffusionScheduler()
         config.useDenoisedIntermediates = true
+        config.imageCount = 2
         if isXL {
             config.encoderScaleFactor = 0.13025
             config.decoderScaleFactor = 0.13025

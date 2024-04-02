@@ -77,26 +77,67 @@ struct ImageWithPlaceholder: View {
                 }
                 ProgressView(label, value: fraction, total: 1).padding()
             })
-        case .complete(let lastPrompt, let image, _, let interval):
+        case .complete(let lastPrompt, let image, _, let interval, let images):
             guard let theImage = image else {
                 return AnyView(Image(systemName: "exclamationmark.triangle").resizable())
             }
-                              
-            let imageView = Image(theImage, scale: 1, label: Text("generated"))
+            let u: [CGImage] = if (images != nil){
+                images!
+            } else {
+                []
+            }
+
+//            let mapped = u.map {
+//                let imageView = Image($0, scale: 1, label: Text("generated"))
+//                return VStack {
+//                    imageView.resizable().clipShape(RoundedRectangle(cornerRadius: 20))
+//                    HStack {
+//                        let intervalString = String(format: "Time: %.1fs", interval ?? 0)
+//                        Rectangle().fill(.clear).overlay(Text(intervalString).frame(maxWidth: .infinity, alignment: .leading).padding(.leading))
+//                        Rectangle().fill(.clear).overlay(
+//                            HStack {
+//                                Spacer()
+//                                ShareButtons(image: theImage, name: lastPrompt).padding(.trailing)
+//                            }
+//                        )
+//                    }.frame(maxHeight: 25)
+//                }
+//            }
             return AnyView(
                 VStack {
-                    imageView.resizable().clipShape(RoundedRectangle(cornerRadius: 20))
-                    HStack {
-                        let intervalString = String(format: "Time: %.1fs", interval ?? 0)
-                        Rectangle().fill(.clear).overlay(Text(intervalString).frame(maxWidth: .infinity, alignment: .leading).padding(.leading))
-                        Rectangle().fill(.clear).overlay(
+                    ForEach(u, id: \.self) {
+                        let imageView = Image($0, scale: 1, label: Text("generated"))
+                        return VStack {
+                            imageView.resizable().clipShape(RoundedRectangle(cornerRadius: 20))
                             HStack {
-                                Spacer()
-                                ShareButtons(image: theImage, name: lastPrompt).padding(.trailing)
-                            }
-                        )
-                    }.frame(maxHeight: 25)
-            })
+                                let intervalString = String(format: "Time: %.1fs", interval ?? 0)
+                                Rectangle().fill(.clear).overlay(Text(intervalString).frame(maxWidth: .infinity, alignment: .leading).padding(.leading))
+                                Rectangle().fill(.clear).overlay(
+                                    HStack {
+                                        Spacer()
+                                        ShareButtons(image: theImage, name: lastPrompt).padding(.trailing)
+                                    }
+                                )
+                            }.frame(maxHeight: 25)
+                        }
+                    }
+                }
+            )
+//            let imageView = Image(theImage, scale: 1, label: Text("generated"))
+//            return AnyView(
+//                VStack {
+//                    imageView.resizable().clipShape(RoundedRectangle(cornerRadius: 20))
+//                    HStack {
+//                        let intervalString = String(format: "Time: %.1fs", interval ?? 0)
+//                        Rectangle().fill(.clear).overlay(Text(intervalString).frame(maxWidth: .infinity, alignment: .leading).padding(.leading))
+//                        Rectangle().fill(.clear).overlay(
+//                            HStack {
+//                                Spacer()
+//                                ShareButtons(image: theImage, name: lastPrompt).padding(.trailing)
+//                            }
+//                        )
+//                    }.frame(maxHeight: 25)
+//            })
         case .failed(_):
             return AnyView(Image(systemName: "exclamationmark.triangle").resizable())
         case .userCanceled:
@@ -113,8 +154,9 @@ struct TextToImage: View {
         Task {
             generation.state = .running(nil)
             do {
-                let result = try await generation.generate()
-                generation.state = .complete(generation.positivePrompt, result.image, result.lastSeed, result.interval)
+                let result1 = try await generation.generate()
+                let result2 = try await generation.generate()
+                generation.state = .complete(generation.positivePrompt, result1.image, result1.lastSeed, result1.interval, [result1.image!, result2.image!])
             } catch {
                 generation.state = .failed(error)
             }
@@ -131,8 +173,10 @@ struct TextToImage: View {
                 .padding()
                 .buttonStyle(.borderedProminent)
             }
-            ImageWithPlaceholder(state: $generation.state)
-                .scaledToFit()
+            HStack {
+                ImageWithPlaceholder(state: $generation.state)
+                    .scaledToFit()
+            }
             Spacer()
         }
         .padding()
